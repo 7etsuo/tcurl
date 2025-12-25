@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libsocket
+Description: High-performance C socket library with TLS, HTTP/2, WebSocket, and async DNS
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lsocket
+Libs.private: -lpthread -lm @PC_LIBS_PRIVATE@
+Cflags: -I${includedir}
