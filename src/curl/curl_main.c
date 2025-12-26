@@ -599,8 +599,19 @@ execute_with_data (CurlSession_T session, TcurlOptions *opts,
     return Curl_put (session, opts->url, content_type, opts->data,
                      opts->data_len);
 
-  return Curl_post (session, opts->url, content_type, opts->data,
-                    opts->data_len);
+  if (method == HTTP_METHOD_POST)
+    return Curl_post (session, opts->url, content_type, opts->data,
+                      opts->data_len);
+
+  /* PATCH and other methods with body - use generic request */
+  SocketHTTP_Headers_T headers = NULL;
+  if (content_type)
+    {
+      headers = SocketHTTP_Headers_new (Arena_new ());
+      SocketHTTP_Headers_add (headers, "Content-Type", content_type);
+    }
+  return Curl_request (session, method, opts->url, headers, opts->data,
+                       opts->data_len);
 }
 
 static CurlError
@@ -614,6 +625,9 @@ execute_request (CurlSession_T session, TcurlOptions *opts)
   if (opts->head_only)
     return Curl_head (session, opts->url);
 
+  if (method == HTTP_METHOD_GET)
+    return Curl_get (session, opts->url);
+
   if (method == HTTP_METHOD_DELETE)
     return Curl_delete (session, opts->url);
 
@@ -623,7 +637,8 @@ execute_request (CurlSession_T session, TcurlOptions *opts)
   if (method == HTTP_METHOD_PUT)
     return Curl_put (session, opts->url, NULL, NULL, 0);
 
-  return Curl_get (session, opts->url);
+  /* PATCH, OPTIONS, TRACE, and other methods without body */
+  return Curl_request (session, method, opts->url, NULL, NULL, 0);
 }
 
 static void
